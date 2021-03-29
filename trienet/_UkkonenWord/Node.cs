@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,14 +11,24 @@ namespace Gma.DataStructures.StringSearch.Word
         private readonly IDictionary<int, Edge<T>> _edges;
         private readonly HashSet<T> _data;
 
+        public IDictionary<int, Edge<T>> edges {
+            get {
+                return _edges;
+            }
+        }
+
+        public HashSet<T> data {
+            get {
+                return _data;
+            }
+        }
+
         public Node()
         {
             _edges = new IntDictionary<T>();
             Suffix = null;
             _data = new HashSet<T>();
-        }
-
-       
+        } 
 
         public IEnumerable<T> GetData()
         {
@@ -58,5 +68,7 @@ namespace Gma.DataStructures.StringSearch.Word
         }
 
         public Node<T> Suffix { get; set; }
+
+        
     }
 }

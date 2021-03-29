@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,15 +11,15 @@ using System.Linq;
 
 namespace Gma.DataStructures.StringSearch.Word
 {
-    public class UkkonenTrieWord<T> : ITrie<T>
+    public class UkkonenTrieWord : ITrie<int>
     {
         private readonly int _minSuffixLength;
 
         //The root of the suffix tree
-        private readonly Node<T> _root;
+        private readonly Node<int> _root;
 
         //The last leaf that was added during the update operation
-        private Node<T> _activeLeaf;
+        private Node<int> _activeLeaf;
 
         private Dictionary<string, int> _wordToIndex;
 
@@ -29,21 +30,21 @@ namespace Gma.DataStructures.StringSearch.Word
         public UkkonenTrieWord(int minSuffixLength, Dictionary<string, int> wordToIndex) 
         {
             _minSuffixLength = minSuffixLength;
-            _root = new Node<T>();
+            _root = new Node<int>();
             _activeLeaf = _root;
             _wordToIndex = wordToIndex;
         }
 
-        public IEnumerable<T> Retrieve(List<int> word)
+        public IEnumerable<int> Retrieve(List<int> word)
         {
-            if (word.Count < _minSuffixLength) return Enumerable.Empty<T>();
+            if (word.Count < _minSuffixLength) return Enumerable.Empty<int>();
             var tmpNode = SearchNode(word);
             return tmpNode == null 
-                ? Enumerable.Empty<T>() 
+                ? Enumerable.Empty<int>() 
                 : tmpNode.GetData();
         }
 
-        public IEnumerable<T> Retrieve(string key)
+        public IEnumerable<int> Retrieve(string key)
         {
             var words = key.Split(' ');
             var newKey = new List<int>();
@@ -63,25 +64,25 @@ namespace Gma.DataStructures.StringSearch.Word
         }
 
         /**
-         * Returns the tree NodeA<T> (if present) that corresponds to the given string.
+         * Returns the tree NodeA<int> (if present) that corresponds to the given string.
          */
-        private Node<T> SearchNode(List<int> word)
+        private Node<int> SearchNode(List<int> word)
         {
             /*
-             * Verifies if exists a path from the root to a NodeA<T> such that the concatenation
+             * Verifies if exists a path from the root to a NodeA<int> such that the concatenation
              * of all the labels on the path is a superstring of the given word.
-             * If such a path is found, the last NodeA<T> on it is returned.
+             * If such a path is found, the last NodeA<int> on it is returned.
              */
             var currentNode = _root;
 
             for (var i = 0; i < word.Count; ++i)
             {
                 var ch = word[i];
-                // follow the EdgeA<T> corresponding to this char
+                // follow the EdgeA<int> corresponding to this char
                 var currentEdge = currentNode.GetEdge(ch);
                 if (null == currentEdge)
                 {
-                    // there is no EdgeA<T> starting with this char
+                    // there is no EdgeA<int> starting with this char
                     return null;
                 }
                 var label = currentEdge.Label;
@@ -89,7 +90,7 @@ namespace Gma.DataStructures.StringSearch.Word
 
                 if (!RegionMatches(word, i, label, 0, lenToMatch))
                 {
-                    // the label on the EdgeA<T> does not correspond to the one in the string to search
+                    // the label on the EdgeA<int> does not correspond to the one in the string to search
                     return null;
                 }
 
@@ -97,7 +98,7 @@ namespace Gma.DataStructures.StringSearch.Word
                 {
                     return currentEdge.Target;
                 }
-                // advance to next NodeA<T>
+                // advance to next NodeA<int>
                 currentNode = currentEdge.Target;
                 i += lenToMatch - 1;
             }
@@ -105,20 +106,15 @@ namespace Gma.DataStructures.StringSearch.Word
             return null;
         }
 
-
-        /*  
-            DEPRECATED
-        */
-        public void Add(string key, T value)
+        public void Add(string key, int value)
         {
             var words = key.Split(' ');
             var newKey = new List<int>();
             for(int i = 0; i<words.Length; ++i) newKey.Add(_wordToIndex[words[i]]);
             this.Add(newKey, value);
-            // Console.WriteLine("-------- add dones");
         }
 
-        public void Add(List<int> key, T value) {
+        public void Add(List<int> key, int value) {
             // reset activeLeaf
             _activeLeaf = _root;
 
@@ -157,20 +153,20 @@ namespace Gma.DataStructures.StringSearch.Word
          * Tests whether the string stringPart + t is contained in the subtree that has inputs as root.
          * If that's not the case, and there exists a path of edges e1, e2, ... such that
          *     e1.label + e2.label + ... + $end = stringPart
-         * and there is an EdgeA<T> g such that
+         * and there is an EdgeA<int> g such that
          *     g.label = stringPart + rest
          * 
          * Then g will be split in two different edges, one having $end as label, and the other one
          * having rest as label.
          *
-         * @param inputs the starting NodeA<T>
+         * @param inputs the starting NodeA<int>
          * @param stringPart the string to search
          * @param t the following character
          * @param remainder the remainder of the string to add to the index
          * @param value the value to add to the index
          * @return a Tuple containing
          *                  true/false depending on whether (stringPart + t) is contained in the subtree starting in inputs
-         *                  the last NodeA<T> that can be reached by following the path denoted by stringPart starting from inputs
+         *                  the last NodeA<int> that can be reached by following the path denoted by stringPart starting from inputs
          *         
          */
 
@@ -185,7 +181,7 @@ namespace Gma.DataStructures.StringSearch.Word
 
 
         // refactored
-        private static Tuple<bool, Node<T>> TestAndSplit(Node<T> inputs, List<int> stringPart, int t, List<int> remainder, T value)
+        private static Tuple<bool, Node<int>> TestAndSplit(Node<int> inputs, List<int> stringPart, int t, List<int> remainder, int value)
         {
             // descend the tree as far as possible
             var ret = Canonize(inputs, stringPart);
@@ -198,19 +194,19 @@ namespace Gma.DataStructures.StringSearch.Word
                 var g = s.GetEdge(str[0]);
 
                 var label = g.Label;
-                // must see whether "str" is substring of the label of an EdgeA<T>
+                // must see whether "str" is substring of the label of an EdgeA<int>
                 if (label.Count > str.Count && label[str.Count] == t)
                 {
-                    return new Tuple<bool, Node<T>>(true, s);
+                    return new Tuple<bool, Node<int>>(true, s);
                 }
-                // need to split the EdgeA<T>
+                // need to split the EdgeA<int>
                 var newlabel = label.Skip(str.Count).ToList();
                 //assert (label.startsWith(str));
 
-                // build a new NodeA<T>
-                var r = new Node<T>();
-                // build a new EdgeA<T>
-                var newedge = new Edge<T>(str, r);
+                // build a new NodeA<int>
+                var r = new Node<int>();
+                // build a new EdgeA<int>
+                var newedge = new Edge<int>(str, r);
 
                 g.Label = newlabel;
 
@@ -218,39 +214,39 @@ namespace Gma.DataStructures.StringSearch.Word
                 r.AddEdge(newlabel[0], g);
                 s.AddEdge(str[0], newedge);
 
-                return new Tuple<bool, Node<T>>(false, r);
+                return new Tuple<bool, Node<int>>(false, r);
             }
             var e = s.GetEdge(t);
             if (null == e)
             {
                 // if there is no t-transtion from s
-                return new Tuple<bool, Node<T>>(false, s);
+                return new Tuple<bool, Node<int>>(false, s);
             }
             // if (remainder.Equals(e.Label))
             if (Equals(remainder, e.Label))
             {
-                // update payload of destination NodeA<T>
+                // update payload of destination NodeA<int>
                 e.Target.AddRef(value);
-                return new Tuple<bool, Node<T>>(true, s);
+                return new Tuple<bool, Node<int>>(true, s);
             }
             // if (remainder.StartsWith(e.Label))
             if (StartsWith(remainder, e.Label))
             {
-                return new Tuple<bool, Node<T>>(true, s);
+                return new Tuple<bool, Node<int>>(true, s);
             }
             if (!StartsWith(e.Label, remainder))
             {
-                return new Tuple<bool, Node<T>>(true, s);
+                return new Tuple<bool, Node<int>>(true, s);
             }
             // need to split as above
-            var newNode = new Node<T>();
+            var newNode = new Node<int>();
             newNode.AddRef(value);
 
-            var newEdge = new Edge<T>(remainder, newNode);
+            var newEdge = new Edge<int>(remainder, newNode);
             e.Label = e.Label.Skip(remainder.Count).ToList();
             newNode.AddEdge(e.Label[0], e);
             s.AddEdge(t, newEdge);
-            return new Tuple<bool, Node<T>>(false, s);
+            return new Tuple<bool, Node<int>>(false, s);
             // they are different words. No prefix. but they may still share some common substr
         }
 
@@ -264,17 +260,17 @@ namespace Gma.DataStructures.StringSearch.Word
             return true;
         }
         /**
-         * Return a (NodeA<T>, string) (n, remainder) Tuple such that n is a farthest descendant of
-         * s (the input NodeA<T>) that can be reached by following a path of edges denoting
+         * Return a (NodeA<int>, string) (n, remainder) Tuple such that n is a farthest descendant of
+         * s (the input NodeA<int>) that can be reached by following a path of edges denoting
          * a prefix of inputstr and remainder will be string that must be
          * appended to the concatenation of labels from s to n to get inpustr.
          */
-        private static Tuple<Node<T>, List<int>> Canonize(Node<T> s, List<int> inputstr)
+        private static Tuple<Node<int>, List<int>> Canonize(Node<int> s, List<int> inputstr)
         {
 
             if (inputstr.Count == 0)
             {
-                return new Tuple<Node<T>, List<int> >(s, inputstr);
+                return new Tuple<Node<int>, List<int> >(s, inputstr);
             }
 
             var currentNode = s;
@@ -291,26 +287,26 @@ namespace Gma.DataStructures.StringSearch.Word
                 }
             }
 
-            return new Tuple<Node<T>, List<int>>(currentNode, str);
+            return new Tuple<Node<int>, List<int>>(currentNode, str);
         }
 
         /**
          * Updates the tree starting from inputNode and by adding stringPart.
          * 
-         * Returns a reference (NodeA<T>, string) Tuple for the string that has been added so far.
+         * Returns a reference (NodeA<int>, string) Tuple for the string that has been added so far.
          * This means:
-         * - the NodeA<T> will be the NodeA<T> that can be reached by the longest path string (S1)
+         * - the NodeA<int> will be the NodeA<int> that can be reached by the longest path string (S1)
          *   that can be obtained by concatenating consecutive edges in the tree and
          *   that is a substring of the string added so far to the tree.
          * - the string will be the remainder that must be added to S1 to get the string
          *   added so far.
          * 
-         * @param inputNode the NodeA<T> to start from
+         * @param inputNode the NodeA<int> to start from
          * @param stringPart the string to add to the tree
          * @param rest the rest of the string
          * @param value the value to add to the index
          */
-        private Tuple<Node<T>, List<int>> Update(Node<T> inputNode, List<int> stringPart, List<int> rest, T value)
+        private Tuple<Node<int>, List<int>> Update(Node<int> inputNode, List<int> stringPart, List<int> rest, int value)
         {
             var s = inputNode;
             var tempstr = stringPart;
@@ -330,19 +326,19 @@ namespace Gma.DataStructures.StringSearch.Word
             {
                 // line 3
                 var tempEdge = r.GetEdge(newChar);
-                Node<T> leaf;
+                Node<int> leaf;
                 if (null != tempEdge)
                 {
-                    // such a NodeA<T> is already present. This is one of the main differences from Ukkonen's case:
+                    // such a NodeA<int> is already present. This is one of the main differences from Ukkonen's case:
                     // the tree can contain deeper nodes at this stage because different strings were added by previous iterations.
                     leaf = tempEdge.Target;
                 }
                 else
                 {
                     // must build a new leaf
-                    leaf = new Node<T>();
+                    leaf = new Node<int>();
                     leaf.AddRef(value);
-                    var newedge = new Edge<T>(rest, leaf);
+                    var newedge = new Edge<int>(rest, leaf);
                     r.AddEdge(newChar, newedge);
                 }
 
@@ -365,10 +361,10 @@ namespace Gma.DataStructures.StringSearch.Word
                 // line 6
                 if (null == s.Suffix)
                 {
-                    // root NodeA<T>
+                    // root NodeA<int>
                     //TODO Check why assert
                     //assert (root == s);
-                    // this is a special case to handle what is referred to as NodeA<T> _|_ on the paper
+                    // this is a special case to handle what is referred to as NodeA<int> _|_ on the paper
                     tempstr = tempstr.Skip(1).ToList();
                 }
                 else
@@ -395,12 +391,56 @@ namespace Gma.DataStructures.StringSearch.Word
                 oldroot.Suffix = r;
             }
 
-            return new Tuple<Node<T>, List<int>>(s, tempstr);
+            return new Tuple<Node<int>, List<int>>(s, tempstr);
         }
 
         private static List<int> SafeCutLastChar(List<int> seq)
         {
             return seq.Count == 0 ? new List<int>() : seq.Take(seq.Count - 1).ToList();
         }
+
+
+        byte[] toByte(int a) {
+            return BitConverter.GetBytes(a);
+        }
+        public void Save(Stream stream){
+            var queue = new Queue<Node<int>>();
+            queue.Enqueue(_root);
+            while(queue.Count > 0) {
+                var front = queue.Dequeue();
+                var data = front.data;
+                var dataLen = front.data.Count;
+                stream.Write(toByte(dataLen), 0, 4); // write 4 byte len
+                foreach(var entry in data) {
+                    stream.Write(toByte(entry), 0, 4); // write 4 byte len
+                }
+                var edgeCount = front.edges.Count;
+                stream.Write(toByte(edgeCount), 0, 4); // write 4 byte len
+                
+                foreach(var entry in front.edges) {
+                    // int label first
+                    stream.Write(toByte(entry.Key), 0, 4);
+                    // write label (sequence of int)
+                    stream.Write(toByte(entry.Value.Label.Count), 0, 4);
+                    foreach(var element in entry.Value.Label) {
+                        stream.Write(toByte(element), 0, 4);
+                    }
+                    // child_count for next level interation
+                    stream.Write(toByte(entry.Value.Target.edges.Count), 0, 4);
+
+                    // push edge end-side node:
+                    queue.Enqueue(entry.Value.Target);
+                }
+            }
+            /*
+            Scheme:
+                dataLen [dataArray] edgeCount [label suffixes=(count [numbers]) child_count] // first level
+                dataLen [dataArray] edgeCount [label suffixes=(count [numbers]) child_count] dataLen [dataArray] edgeCount [label suffixes=(count [numbers]) child_count] // second level
+            */
+        }
+
+        // void load(Stream stream){
+
+        // }
     }
 }

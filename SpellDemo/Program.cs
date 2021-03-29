@@ -69,7 +69,7 @@ namespace CustomSpell
             Console.WriteLine("Done in " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms "
                 + (memDelta / 1024 / 1024.0).ToString("N0") + " MB. Token count: " + wordToIndex.Count);
 
-            trie.Save();
+            // trie.Save();
             // // build spell checker
             // var spellChecker = new SymSpell(wordToIndex.Count, 2);
             // foreach(var entry in wordCount) {
