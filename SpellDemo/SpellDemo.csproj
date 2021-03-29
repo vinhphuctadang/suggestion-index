@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="SoftWx.Match\Distance.cs" />
+  </ItemGroup>
+
+ <ItemGroup>
+    <None Remove="frequency_dictionary_en_82_765.txt" />
+	<None Remove="frequency_bigramdictionary_en_243_342.txt" />	
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="frequency_dictionary_en_82_765.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="small-suggests.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+	  <Content Include="frequency_bigramdictionary_en_243_342.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.4.0" Condition="'$(TargetFramework)' == 'net461'" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrieNet\TrieNet.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SymSpell\SymSpell.csproj" />
+  </ItemGroup>
+</Project>
