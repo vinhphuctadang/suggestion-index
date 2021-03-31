@@ -27,9 +27,8 @@ namespace CustomSpell
             var wordToIndex = new Dictionary<string, int>();
             var wordCount = new Dictionary<string, int>();
             var phraseList = new List<string>();
-            // var tmp = ""; 
-            int count = 0;
 
+            int count = 0;
             using (StreamReader sr = new StreamReader(path))
             {
                 while (sr.Peek() >= 0)
