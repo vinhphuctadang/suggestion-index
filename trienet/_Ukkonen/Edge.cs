@@ -11,5 +11,6 @@
         public string Label { get; set; }
 
         public Node<T> Target { get; private set; }
+
     }
 }

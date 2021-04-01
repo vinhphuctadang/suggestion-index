@@ -346,5 +346,18 @@ namespace Gma.DataStructures.StringSearch
         {
             return seq.Length == 0 ? string.Empty : seq.Substring(0, seq.Length - 1);
         }
+
+        public void PrintTree() {
+            var queue = new Queue<Node<T>>();
+            queue.Enqueue(_root);
+            while(queue.Count > 0) {
+                var front = queue.Dequeue();
+                foreach(var entry in front.edges) {
+                    Console.WriteLine("First char: " + entry.Key + ", Label = " + entry.Value.Label);
+                    // push edge end-side node:
+                    queue.Enqueue(entry.Value.Target);
+                }
+            }
+        }
     }
 }

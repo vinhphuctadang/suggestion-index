@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net47</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="all-suggests-cleaned.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="small-suggests.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include=".\System.Runtime.Serialization.Formatters.Soap.dll" Version="4.4.0" Condition="'$(TargetFramework)' == 'net461'"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\trienet\TrieNet.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SymSpell\SymSpell.csproj" />
+  </ItemGroup>
+</Project>

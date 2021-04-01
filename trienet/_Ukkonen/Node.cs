@@ -11,6 +11,12 @@ namespace Gma.DataStructures.StringSearch
         private readonly IDictionary<char, Edge<T>> _edges;
         private readonly HashSet<T> _data;
 
+        public IDictionary<char, Edge<T>> edges {
+            get {
+                return _edges;
+            }
+        }
+
         public Node()
         {
             _edges = new CharDictionary<T>();
