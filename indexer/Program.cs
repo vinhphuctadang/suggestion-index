@@ -71,19 +71,22 @@ namespace indexer
                 trie.Add(entry.Key, entry.Key);
             }
 
-            Console.WriteLine(((GC.GetTotalMemory(true)-memSize) / 1024 / 1024.0).ToString("N0") + " MB. Token count: " + counter.Count);
+            Console.WriteLine("Add to trie: " + ((GC.GetTotalMemory(true)-memSize) / 1024 / 1024.0).ToString("N0") + " MB. Token count: " + counter.Count);
             stopWatch.Stop();
             long memDeltaForStoringValues = GC.GetTotalMemory(true) - memSize;
-            Console.WriteLine("Done in " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms "
+            Console.WriteLine("Everything done in " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms "
                 + (memDeltaForStoringValues / 1024 / 1024.0).ToString("N0") + " MB. Token count: " + counter.Count);
-            var result = Search("footb club", trie, inverter, counter, stringList, 10);
 
-            foreach(var r in result) {
-                Console.WriteLine("Hits: " + r.value + ", score = " + r.score);
-            }
+            stopWatch = new Stopwatch();
+            stopWatch.Start();
+            var result = Search("bitcurious", trie, inverter, counter, stringList, 10);
+            stopWatch.Stop();
+
+            Console.WriteLine("Search done in " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms, hits: " + result.Count);
+            
         }
 
-        static SearchResult[] Search(string query, PatriciaSuffixTrie<string> trie, Dictionary<int, HashSet<int>> inverter, Dictionary<string, int> counter, List<string> stringList, int limit) {
+        static Dictionary<int, SearchResult> Search(string query, PatriciaSuffixTrie<string> trie, Dictionary<int, HashSet<int>> inverter, Dictionary<string, int> counter, List<string> stringList, int limit) {
             var indexToResult = new Dictionary<int, SearchResult>();
             var tokens = query.ToLower().Split(' ').ToList();
             
@@ -106,6 +109,13 @@ namespace indexer
                 // hits
                 foreach(var index in inverter[wordIndex]) {
                     SearchResult tmp;
+
+                    // skip, use the top most
+                    // if (indexToResult.Count >= limit) {
+                    //     forceStop = true;
+                    //     break;
+                    // }
+
                     if (!indexToResult.TryGetValue(index, out tmp)) {
                         tmp = new SearchResult(stringList[index], (tokens.Count - i)*(tokens.Count - i));
                         indexToResult[index] = tmp;
@@ -119,7 +129,7 @@ namespace indexer
                     break;
                 }
             }
-            return indexToResult.Values.OrderBy(x => -x.score).ToArray();
+            return indexToResult; // indexToResult.Values.OrderBy(x => x.score).ToArray();
         }
 
         static long SaveIndex(string indexerPath, Dictionary<int, HashSet<int>> inverter, Dictionary<string, int> counter, List<string> stringList) {
