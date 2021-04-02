@@ -15,4 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\trienet\TrieNet.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SymSpell\SymSpell.csproj" />
+  </ItemGroup>
 </Project>
