@@ -88,17 +88,25 @@ namespace indexer
                 spellChecker.CreateDictionaryEntry(entry.Key, entry.Value);
             }
 
+
             Console.WriteLine("Spell dictionary constructed. " + ((GC.GetTotalMemory(true)-memSize) / 1024 / 1024.0).ToString("N0") + "MB, " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms. Tokens:" + frequency.Count);
+            stopWatch = new Stopwatch();
+            stopWatch.Start();
+            Console.WriteLine("Saving index ...");
+            stopWatch.Stop();
+            long byteCount = SaveIndex(indexerPath, trie, spellChecker, inverter, dict, documents);
 
             stopWatch = new Stopwatch();
+            Console.WriteLine("File saved: " + byteCount + " bytes. Time ellapsed: " + stopWatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
             stopWatch.Start();
             Console.WriteLine("Searching ...");
             var hits = Search("342 cw", trie, spellChecker, inverter, dict, documents, 10);
             stopWatch.Stop();
             var timeEllapsed = stopWatch.Elapsed.TotalMilliseconds.ToString("0.0");
-            foreach(var hit in hits) {
-                Console.WriteLine("--> " + hit.value);
-            }
+            // foreach(var hit in hits) {
+            //     Console.WriteLine("--> " + hit.value);
+            // }
+
             Console.WriteLine("Searching done." + timeEllapsed + "ms. Hits:" + hits.Length);
         }
 
