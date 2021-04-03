@@ -22,10 +22,10 @@ namespace indexer
         }
         static void Main(string[] args)
         {
-            // var path = AppDomain.CurrentDomain.BaseDirectory + "all-suggests-cleaned.txt";
-            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "all-suggests-cleaned.index";
-            var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
-            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
+            var path = AppDomain.CurrentDomain.BaseDirectory + "all-suggests-cleaned.txt";
+            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "all-suggests-cleaned.index";
+            // var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
+            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
             var dict = new Dictionary<string, int>();
             var frequency = new Dictionary<string, int>();
             var inverter = new Dictionary<int, HashSet<int>>();
@@ -89,11 +89,11 @@ namespace indexer
             stopWatch = new Stopwatch();
             stopWatch.Start();
             Console.WriteLine("Searching ...");
-            var hits = Search("ant man", trie, spellChecker, inverter, dict, documents, 10);
+            var hits = Search("a", trie, spellChecker, inverter, dict, documents, 10);
             stopWatch.Stop();
             var timeEllapsed = stopWatch.Elapsed.TotalMilliseconds.ToString("0.0");
             foreach(var hit in hits) {
-                Console.WriteLine("--> " + hit);
+                Console.WriteLine("--> " + hit.value);
             }
             Console.WriteLine("Searching done." + timeEllapsed + "ms. Hits:" + hits.Length);
         }
@@ -128,15 +128,16 @@ namespace indexer
                 // 1. find exact matches first
                 int tmp;
                 if (dict.TryGetValue(word, out tmp)) {
+
                     var docs = inverter[tmp];
                     foreach(var doc in docs) {
-                        SearchResult tempList;
+                        SearchResult tempSearchResult;
                         // add to aggregated result
-                        if (!aggregated.TryGetValue(doc, out tempList)) {
-                            tempList = new SearchResult(word, 1);
+                        if (!aggregated.TryGetValue(doc, out tempSearchResult)) {
+                            aggregated[doc] = new SearchResult(documents[doc], 1);;
                         }
                         else {
-                            tempList.score ++;
+                            tempSearchResult.score ++;
                         }
                     }    
                     continue;
@@ -148,6 +149,7 @@ namespace indexer
                     // take 1 suggestion first
                     foreach(var suggest in trie.Retrieve(word)) {
                         suggestion = suggest;
+                        Console.WriteLine("Prefix matched: " + suggestion);
                         break;
                     }
                     if (suggestion != null) {
@@ -168,7 +170,18 @@ namespace indexer
             return aggregated.Values.ToArray();
         }
 
-        static long SaveIndex(string indexerPath, Dictionary<int, HashSet<int>> inverter, Dictionary<string, int> dict, List<string> documents) {
+        // static void GetIndex(
+        //     string indexerPath, 
+        //     out PatriciaSuffixTrie<string> trie,
+        //     out SymSpell symSpell, 
+        //     out Dictionary<int, HashSet<int>> inverter, 
+        //     out Dictionary<string, int> dict, 
+        //     List<string> documents
+        // ){
+
+        // }
+        static long SaveIndex(string indexerPath, PatriciaSuffixTrie<string> trie,
+            SymSpell symSpell, Dictionary<int, HashSet<int>> inverter, Dictionary<string, int> dict, List<string> documents) {
 
             long fileSize = 0;
             using (var fs = new FileStream(indexerPath, FileMode.Create))
