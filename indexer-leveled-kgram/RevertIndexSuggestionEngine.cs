@@ -8,8 +8,8 @@ namespace indexer_leveled_kgram {
     class RevertIndexSuggestionEngine : SuggestionEngine {
 
         struct Occurence {
-            int tokenIndex;
-            int position;
+            public int tokenIndex;
+            public int position;
 
             public Occurence(int tokenIndex, int position) {
                 this.tokenIndex = tokenIndex;
@@ -20,11 +20,36 @@ namespace indexer_leveled_kgram {
         Dictionary<int, HashSet<int>> invertedIndex;
         Dictionary<string, int> dict;
         List<string> documents;
+        Dictionary<int, string> revertedDict;
         public RevertIndexSuggestionEngine() {
-            this.bigrams = new Dictionary<string, List<Occurence>>();
-            this.invertedIndex = new Dictionary<int, HashSet<int>>();
-            this.dict = new Dictionary<string, int>();
-            this.documents = new List<string>();
+            this.bigrams        = new Dictionary<string, List<Occurence>>();
+            this.invertedIndex  = new Dictionary<int, HashSet<int>>();
+            this.dict           = new Dictionary<string, int>();
+            this.documents      = new List<string>();
+            this.revertedDict   = new Dictionary<int, string>();
+        }
+
+        public SuggestionResult[] SuggestToken(string pollutedToken, int limit) {
+            // naive method
+            var grams = GetBigrams(pollutedToken);
+            var result = new Dictionary<int, SuggestionResult>();
+            foreach(var gram in grams) {
+                SuggestionResult suggest;
+                List<Occurence> occurences;
+                if (!bigrams.TryGetValue(gram.Key, out occurences)) {
+                    continue;
+                }
+                foreach(var occurence in occurences) {
+                    // add candidate words to dict
+                    if (!result.TryGetValue(occurence.tokenIndex, out suggest)) {
+                        result[occurence.tokenIndex] = new SuggestionResult(revertedDict[occurence.tokenIndex], 1);
+                    }
+                    else {
+                        suggest.score ++;
+                    }
+                }
+            }
+            return result.Values.OrderBy(x => -x.score).Take(limit).ToArray();
         }
 
         Dictionary<string, int> GetBigrams(string s) {
@@ -83,6 +108,7 @@ namespace indexer_leveled_kgram {
                         if (!dict.TryGetValue(tokens[i], out tokenIndex)) {
                             dict[tokens[i]] = ++uniqueTokenCount;
                             tokenIndex = uniqueTokenCount;
+                            revertedDict[uniqueTokenCount] = tokens[i];
                         }
 
                         HashSet<int> postList;
@@ -119,9 +145,6 @@ namespace indexer_leveled_kgram {
             }
         }
 
-        public List<int> SuggestToken(string token) {
-            return new List<int>();
-        }
         override public SuggestionResult[] GetSuggestions(string query) {
 
             return new SuggestionResult[0];

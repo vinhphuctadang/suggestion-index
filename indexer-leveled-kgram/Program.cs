@@ -36,10 +36,10 @@ namespace indexer_leveled_kgram
         static void Main(string[] args)
         {
             // tokenization
-            // var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
-            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
-            var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
-            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
+            var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
+            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
+            // var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
+            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
             var engine = new RevertIndexSuggestionEngine();
             Measurement marker;
 
@@ -49,15 +49,16 @@ namespace indexer_leveled_kgram
             engine.Index(path);
             Report(marker, "Indexing done");
 
-            // marker = Mark();
-            // var result = engine.GetSuggestions("mensuite");
-            // Report(marker, "Searching done. Hit count: " + result.Length);
+            
+            marker = Mark();
+            var result = engine.SuggestToken("mensuitesku", 3);
+            Report(marker, "Suggestion done. Hit count: " + result.Length);
 
-            // int count = 0;
-            // foreach(var r in result) {
-            //     if (++count > 10) { break; }
-            //     Console.WriteLine(r.value + ", score: " + r.score);
-            // }
+            int count = 0;
+            foreach(var r in result) {
+                if (++count > 10) { break; }
+                Console.WriteLine(r.value + ", score: " + r.score);
+            }
         }
     }
 }

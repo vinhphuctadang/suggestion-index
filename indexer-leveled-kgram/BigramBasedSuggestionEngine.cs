@@ -12,8 +12,7 @@ namespace indexer_leveled_kgram {
             // this.dict = new Dictionary<string, int>();
             this.documents = new List<string>();
             this.bigramToSuggestions = new Dictionary<string, HashSet<int>>();
-        } 
-
+        }
         Dictionary<string, int> GetBigrams(string s) {
             string delimiter = " .*\"$-";
             var result = new Dictionary<string, int>();
@@ -69,7 +68,7 @@ namespace indexer_leveled_kgram {
                 }
             }
         }
-        
+
         override public SuggestionResult[] GetSuggestions(string query) {
             
             // to bigrams
