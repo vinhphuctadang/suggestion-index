@@ -36,10 +36,10 @@ namespace indexer_leveled_kgram
         static void Main(string[] args)
         {
             // tokenization
-            var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
-            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
-            // var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
-            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
+            // var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
+            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
+            var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
+            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
             var engine = new RevertIndexSuggestionEngine();
             Measurement marker;
 
@@ -51,7 +51,7 @@ namespace indexer_leveled_kgram
 
             
             marker = Mark();
-            var result = engine.SuggestToken("mensuitesku", 3);
+            var result = engine.GetSuggestions("synopsisrose");
             Report(marker, "Suggestion done. Hit count: " + result.Length);
 
             int count = 0;

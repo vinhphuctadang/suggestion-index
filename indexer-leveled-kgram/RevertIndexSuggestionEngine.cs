@@ -20,13 +20,13 @@ namespace indexer_leveled_kgram {
         Dictionary<int, HashSet<int>> invertedIndex;
         Dictionary<string, int> dict;
         List<string> documents;
-        Dictionary<int, string> revertedDict;
+        Dictionary<int, string> invertedDict;
         public RevertIndexSuggestionEngine() {
             this.bigrams        = new Dictionary<string, List<Occurence>>();
             this.invertedIndex  = new Dictionary<int, HashSet<int>>();
             this.dict           = new Dictionary<string, int>();
             this.documents      = new List<string>();
-            this.revertedDict   = new Dictionary<int, string>();
+            this.invertedDict   = new Dictionary<int, string>();
         }
 
         public SuggestionResult[] SuggestToken(string pollutedToken, int limit) {
@@ -42,7 +42,7 @@ namespace indexer_leveled_kgram {
                 foreach(var occurence in occurences) {
                     // add candidate words to dict
                     if (!result.TryGetValue(occurence.tokenIndex, out suggest)) {
-                        result[occurence.tokenIndex] = new SuggestionResult(revertedDict[occurence.tokenIndex], 1);
+                        result[occurence.tokenIndex] = new SuggestionResult(invertedDict[occurence.tokenIndex], 1);
                     }
                     else {
                         suggest.score ++;
@@ -108,7 +108,7 @@ namespace indexer_leveled_kgram {
                         if (!dict.TryGetValue(tokens[i], out tokenIndex)) {
                             dict[tokens[i]] = ++uniqueTokenCount;
                             tokenIndex = uniqueTokenCount;
-                            revertedDict[uniqueTokenCount] = tokens[i];
+                            invertedDict[uniqueTokenCount] = tokens[i];
                         }
 
                         HashSet<int> postList;
@@ -146,8 +146,33 @@ namespace indexer_leveled_kgram {
         }
 
         override public SuggestionResult[] GetSuggestions(string query) {
+            // tokenizer
+            var tokens = query.Split(' ').ToList();
+            var result = new Dictionary<int, SuggestionResult>();
 
-            return new SuggestionResult[0];
+            for(int i = 0; i<tokens.Count; ++i) {
+                int tokenIndex;
+                if (dict.TryGetValue(tokens[i], out tokenIndex)) {
+                    foreach(var candidate in invertedIndex[tokenIndex]) {
+                        SuggestionResult suggestion;
+                        if (!result.TryGetValue(candidate, out suggestion)){
+                            result[candidate] = new SuggestionResult(documents[candidate], 1);
+                        }
+                        else {
+                            suggestion.score ++;
+                        }
+                    }
+
+                    continue;
+                }
+
+                // else go for a suggestion for 3 small word:
+                var suggestions = SuggestToken(tokens[i], 3);
+                for(int j = 0; j<suggestions.Length; ++j) {
+                    tokens.Add(suggestions[j].value);
+                }
+            }
+            return result.Values.OrderBy(x => -x.score).Take(10).ToArray();
         }
 
         override public long GetIndexSize(){
