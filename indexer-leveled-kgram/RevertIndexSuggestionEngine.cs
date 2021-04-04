@@ -7,12 +7,21 @@ namespace indexer_leveled_kgram {
 
     class RevertIndexSuggestionEngine : SuggestionEngine {
 
-        Dictionary<string, HashSet<int>> bigrams;
+        struct Occurence {
+            int tokenIndex;
+            int position;
+
+            public Occurence(int tokenIndex, int position) {
+                this.tokenIndex = tokenIndex;
+                this.position = position;
+            }
+        }
+        Dictionary<string, List<Occurence>> bigrams;
         Dictionary<int, HashSet<int>> invertedIndex;
         Dictionary<string, int> dict;
         List<string> documents;
         public RevertIndexSuggestionEngine() {
-            this.bigrams = new Dictionary<string, HashSet<int>>();
+            this.bigrams = new Dictionary<string, List<Occurence>>();
             this.invertedIndex = new Dictionary<int, HashSet<int>>();
             this.dict = new Dictionary<string, int>();
             this.documents = new List<string>();
@@ -65,7 +74,7 @@ namespace indexer_leveled_kgram {
                     if (s.Length == 0) {
                         continue;
                     }
-                    
+
                     documents.Add(s);
                     var tokens = s.Split(' ');
                     var tokenIndex = 0;
@@ -97,13 +106,15 @@ namespace indexer_leveled_kgram {
                 var tokenIndex = entry.Value;
 
                 var gramDict = GetBigrams(token);
+
+                int i = 0;
                 foreach(var gramEntry in gramDict) {
-                    HashSet<int> tokenIndexSet;
+                    List<Occurence> tokenIndexSet;
                     if (!bigrams.TryGetValue(gramEntry.Key, out tokenIndexSet)) {
-                        tokenIndexSet = new HashSet<int>();
+                        tokenIndexSet = new List<Occurence>();
                         bigrams[gramEntry.Key] = tokenIndexSet;
                     }
-                    tokenIndexSet.Add(tokenIndex);
+                    tokenIndexSet.Add(new Occurence(tokenIndex, i++));
                 }
             }
         }
