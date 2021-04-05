@@ -51,7 +51,7 @@ namespace indexer_leveled_kgram
 
             
             marker = Mark();
-            var result = engine.GetSuggestions("synopsisrose");
+            var result = engine.GetSuggestions("gold whatch");
             Report(marker, "Suggestion done. Hit count: " + result.Length);
 
             int count = 0;
