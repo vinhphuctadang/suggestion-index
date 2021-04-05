@@ -40,7 +40,7 @@ namespace indexer_leveled_kgram
             // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
             var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
             var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
-            var engine = new RevertIndexSuggestionEngine();
+            var engine = new InvertedIndexSuggestionEngine();
             Measurement marker;
 
             Console.WriteLine("Indexing ...");
@@ -49,9 +49,8 @@ namespace indexer_leveled_kgram
             engine.Index(path);
             Report(marker, "Indexing done");
 
-            
             marker = Mark();
-            var result = engine.GetSuggestions("gold whatch");
+            var result = engine.GetFastSuggestions("dress", tolerance: 20);
             Report(marker, "Suggestion done. Hit count: " + result.Length);
 
             int count = 0;

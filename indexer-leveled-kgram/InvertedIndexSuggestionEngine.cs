@@ -1,11 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;    
     
 namespace indexer_leveled_kgram {
 
-    class RevertIndexSuggestionEngine : SuggestionEngine {
+    class SuggestionResultByIndex {
+        public int value;
+        public double score;
+
+        public SuggestionResultByIndex(int value, double score) {
+            this.value = value;
+            this.score = score;
+        }
+    }
+
+    class InvertedIndexSuggestionEngine : SuggestionEngine {
 
         struct Occurence {
             public int tokenIndex;
@@ -21,7 +32,7 @@ namespace indexer_leveled_kgram {
         Dictionary<string, int> dict;
         List<string> documents;
         Dictionary<int, string> invertedDict;
-        public RevertIndexSuggestionEngine() {
+        public InvertedIndexSuggestionEngine() {
             this.bigrams        = new Dictionary<string, List<Occurence>>();
             this.invertedIndex  = new Dictionary<int, HashSet<int>>();
             this.dict           = new Dictionary<string, int>();
@@ -143,9 +154,42 @@ namespace indexer_leveled_kgram {
                     tokenIndexSet.Add(new Occurence(tokenIndex, i++));
                 }
             }
+
+            Console.WriteLine("Number of bigrams: " + bigrams.Count);
         }
 
         override public SuggestionResult[] GetSuggestions(string query) {
+            // tokenizer
+            var tokens = query.Split(' ').ToList();
+            var result = new Dictionary<int, SuggestionResult>();
+
+            for(int i = 0; i<tokens.Count; ++i) {
+                int tokenIndex;
+                if (dict.TryGetValue(tokens[i], out tokenIndex)) {
+                    foreach(var candidate in invertedIndex[tokenIndex]) {
+                        
+                        SuggestionResult suggestion;
+                        if (!result.TryGetValue(candidate, out suggestion)){
+                            result[candidate] = new SuggestionResult(documents[candidate], 1);
+                        }
+                        else {
+                            suggestion.score ++;
+                        }
+                    }
+
+                    continue;
+                }
+
+                // else go for a suggestion for 3 small word:
+                var suggestions = SuggestToken(tokens[i], 3);
+                for(int j = 0; j<suggestions.Length; ++j) {
+                    tokens.Add(suggestions[j].value);
+                }
+            }
+            return result.Values.OrderBy(x => -x.score).Take(10).ToArray();
+        }
+
+        public SuggestionResult[] GetFastSuggestions(string query, int tolerance = 100) {
             // tokenizer
             var tokens = query.Split(' ').ToList();
             var result = new Dictionary<int, SuggestionResult>();
@@ -166,8 +210,12 @@ namespace indexer_leveled_kgram {
                     continue;
                 }
 
-                // else go for a suggestion for 3 small word:
-                var suggestions = SuggestToken(tokens[i], 3);
+                var watch = new Stopwatch();
+                watch.Start();
+                // else go for a suggestion for matches small words:
+                var suggestions = SuggestToken(tokens[i], 2);
+                watch.Stop();
+                Console.WriteLine("Suggestion ellapsed time: " + watch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
                 for(int j = 0; j<suggestions.Length; ++j) {
                     tokens.Add(suggestions[j].value);
                 }
