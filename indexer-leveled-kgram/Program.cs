@@ -45,18 +45,22 @@ namespace indexer_leveled_kgram
 
             Console.WriteLine("Indexing ...");
             marker = Mark();
-
             engine.Index(path);
-            Report(marker, "Indexing done");
+            Report(marker, "Indexing done.");
 
-            marker = Mark();
-            var result = engine.GetFastSuggestions("dress", tolerance: 20);
-            Report(marker, "Suggestion done. Hit count: " + result.Length);
+            
 
-            int count = 0;
-            foreach(var r in result) {
-                if (++count > 10) { break; }
-                Console.WriteLine(r.value + ", score: " + r.score);
+            while(true) {
+
+                Console.WriteLine("Input a phrase: ");
+                var searchPhrase = Console.ReadLine();
+                marker = Mark();
+                var result = engine.GetSuggestions(searchPhrase); //, tolerance: 20);
+                Report(marker, "Suggestion done. Hit count: " + result.Length);
+                // echo hits
+                foreach(var r in result) {
+                    Console.WriteLine(r.value + ", score: " + r.score);
+                }
             }
         }
     }
