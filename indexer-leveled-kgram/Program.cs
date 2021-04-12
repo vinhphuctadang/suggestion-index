@@ -48,12 +48,12 @@ namespace indexer_leveled_kgram
             engine.Index(path);
             Report(marker, "Indexing done.");
 
-            
-
             while(true) {
-
                 Console.WriteLine("Input a phrase: ");
                 var searchPhrase = Console.ReadLine();
+                searchPhrase = searchPhrase.Trim();
+
+                searchPhrase = searchPhrase.Trim();
                 marker = Mark();
                 var result = engine.GetSuggestions(searchPhrase); //, tolerance: 20);
                 Report(marker, "Suggestion done. Hit count: " + result.Length);

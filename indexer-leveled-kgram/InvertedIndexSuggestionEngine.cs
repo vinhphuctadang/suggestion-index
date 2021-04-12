@@ -17,27 +17,47 @@ namespace indexer_leveled_kgram {
     }
 
     class InvertedIndexSuggestionEngine : SuggestionEngine {
+        // struct Occurence {
+        //     public int tokenIndex;
+        //     public int position;
 
-        struct Occurence {
-            public int tokenIndex;
-            public int position;
-
-            public Occurence(int tokenIndex, int position) {
-                this.tokenIndex = tokenIndex;
-                this.position = position;
+        //     public Occurence(int tokenIndex, int position) {
+        //         this.tokenIndex = tokenIndex;
+        //         this.position = position;
+        //     }
+        // }
+        class SuggestionEntry {
+            public int id;
+            public string content;
+            public int count;
+            public SuggestionEntry(int id, string content, int count) {
+                this.id = id;
+                this.content = content;
+                this.count = count;
             }
         }
-        Dictionary<string, List<Occurence>> bigrams;
+        Dictionary<string, HashSet<int>> bigrams; // bigram:string => [tokenId:int]
         Dictionary<int, HashSet<int>> invertedIndex;
         Dictionary<string, int> dict;
-        List<string> documents;
+        
+        Dictionary<int, SuggestionEntry> idToSuggestion;
+        Dictionary<string, SuggestionEntry> contentToSuggestion;
+
         Dictionary<int, string> invertedDict;
+
+        Dictionary<int, HashSet<int>> productIdToSuggestion;
+
+        int uniqueTokenCount;
+
         public InvertedIndexSuggestionEngine() {
-            this.bigrams        = new Dictionary<string, List<Occurence>>();
+            this.bigrams        = new Dictionary<string, HashSet<int>>();
             this.invertedIndex  = new Dictionary<int, HashSet<int>>();
             this.dict           = new Dictionary<string, int>();
-            this.documents      = new List<string>();
+            this.idToSuggestion      = new Dictionary<int, SuggestionEntry>();
+            this.contentToSuggestion = new Dictionary<string, SuggestionEntry>();
             this.invertedDict   = new Dictionary<int, string>();
+            this.uniqueTokenCount = 0;
+            this.productIdToSuggestion = new Dictionary<int, HashSet<int>>();
         }
 
         public SuggestionResult[] SuggestToken(string pollutedToken, int limit) {
@@ -46,14 +66,14 @@ namespace indexer_leveled_kgram {
             var result = new Dictionary<int, SuggestionResult>();
             foreach(var gram in grams) {
                 SuggestionResult suggest;
-                List<Occurence> occurences;
-                if (!bigrams.TryGetValue(gram.Key, out occurences)) {
+                HashSet<int> tokenIndexes; 
+                if (!bigrams.TryGetValue(gram.Key, out tokenIndexes)) {
                     continue;
                 }
-                foreach(var occurence in occurences) {
+                foreach(var tokenId in tokenIndexes) {
                     // add candidate words to dict
-                    if (!result.TryGetValue(occurence.tokenIndex, out suggest)) {
-                        result[occurence.tokenIndex] = new SuggestionResult(invertedDict[occurence.tokenIndex], 1);
+                    if (!result.TryGetValue(tokenId, out suggest)) {
+                        result[tokenId] = new SuggestionResult(invertedDict[tokenId], 1);
                     }
                     else {
                         suggest.score ++;
@@ -100,9 +120,104 @@ namespace indexer_leveled_kgram {
             return result;
         }
 
+        // add suggestion to forward index
+        int AddSuggestionEntry(string suggestion, out bool isNew){
+            int id;
+            SuggestionEntry entry;
+            isNew = !contentToSuggestion.TryGetValue(suggestion, out entry);
+            if (isNew) {
+                id = contentToSuggestion.Count;
+                entry = new SuggestionEntry(id, suggestion, 1);
+                contentToSuggestion[suggestion] = idToSuggestion[id] = entry;
+            }
+            else {
+                entry.count ++;
+            }
+
+            return entry.id;
+        }
+
+        void AddToInvertedIndex(int suggestionId, string suggestion) {
+            var tokens = suggestion.Split(' ');
+            int tokenIndex;
+            for(int i = 0; i<tokens.Length; ++i) {
+                if (!dict.TryGetValue(tokens[i], out tokenIndex)) {
+                    dict[tokens[i]] = ++uniqueTokenCount;
+                    tokenIndex = uniqueTokenCount;
+                    invertedDict[uniqueTokenCount] = tokens[i];
+                }
+                HashSet<int> postList;
+                // after tokenization, use token index as key for invertedIndex
+                if (!invertedIndex.TryGetValue(tokenIndex, out postList)) {
+                    postList = new HashSet<int>();
+                    invertedIndex[tokenIndex] = postList;
+                }
+                postList.Add(suggestionId);
+            }
+        }
+
+        void AddToProductSuggestions(int productId, int suggestionId) {
+            HashSet<int> suggestions;
+            if (productIdToSuggestion.TryGetValue(productId, out suggestions)) {
+                productIdToSuggestion[productId] = new HashSet<int>();
+            }
+            suggestions.Add(suggestionId);
+        }
+
+        public void Insert(int productId, string suggestion) {
+            bool isNew;
+            int suggestionId = AddSuggestionEntry(suggestion, out isNew);
+            if (isNew) {
+                AddToInvertedIndex(suggestionId, suggestion);
+            }
+            AddToProductSuggestions(productId, suggestionId);
+        }
+
+        void RemoveTokenFromIndex(string token){
+
+            int tokenId = dict[token];
+            invertedDict.Remove(tokenId);
+            var grams = GetBigrams(token);
+            var removeLater = new List<string>();
+            foreach(var gram in grams) {
+                HashSet<int> tokenIndexes = bigrams[gram.Key];
+                tokenIndexes.Remove(tokenId);
+
+                if (tokenIndexes.Count == 0) {
+                    removeLater.Add(gram.Key);
+                }
+            }
+            foreach(var gram in removeLater) {
+                bigrams.Remove(gram);
+            }
+        }
+
+        public void Delete(int productId){
+            foreach(var suggestionId in productIdToSuggestion[productId]) {
+                // decrease reference to suggestion
+                idToSuggestion[suggestionId].count--;
+                if (idToSuggestion[suggestionId].count == 0) {
+                    var content = idToSuggestion[suggestionId].content;
+                    foreach(var token in content.Split(" ")) {
+                        HashSet<int> postList;
+                        int tokenId = dict[token];
+                        if (invertedIndex.TryGetValue(tokenId, out postList)) {
+                            postList.Remove(suggestionId);
+                        }
+                    }
+                    idToSuggestion.Remove(suggestionId);
+
+                }
+            }
+            productIdToSuggestion.Remove(productId);
+        }
+        public void GetProductAndSuggestion(string txt, out int productId, out string suggestion) {
+            var tokens = txt.Split(' ');
+            productId = int.Parse(tokens[0]);
+            suggestion = String.Join(" ", tokens.Skip(1));
+        }
+
         override public void Index(string dictionaryName) {
-            var docCount = 0;
-            var uniqueTokenCount = 0;
             using (var sr = new StreamReader(dictionaryName)) {
                 string s = null;
                 while ((s = sr.ReadLine()) != null) {
@@ -110,30 +225,10 @@ namespace indexer_leveled_kgram {
                     if (s.Length == 0) {
                         continue;
                     }
-
-                    documents.Add(s);
-                    var tokens = s.Split(' ');
-                    var tokenIndex = 0;
-                    
-                    for(int i = 0; i<tokens.Length; ++i) {
-                        if (!dict.TryGetValue(tokens[i], out tokenIndex)) {
-                            dict[tokens[i]] = ++uniqueTokenCount;
-                            tokenIndex = uniqueTokenCount;
-                            invertedDict[uniqueTokenCount] = tokens[i];
-                        }
-
-                        HashSet<int> postList;
-                        // after tokenization, use token index as key for invertedIndex
-                        if (!invertedIndex.TryGetValue(tokenIndex, out postList)) {
-                            postList = new HashSet<int>();
-                            invertedIndex[tokenIndex] = postList;
-                        }
-
-                        // docCount as docIndex
-                        postList.Add(docCount);
-                    }
-
-                    docCount ++;
+                    int productId;
+                    string suggestion;
+                    GetProductAndSuggestion(s, out productId, out suggestion);
+                    Insert(productId, suggestion);
                 }
             }
 
@@ -144,14 +239,14 @@ namespace indexer_leveled_kgram {
 
                 var gramDict = GetBigrams(token);
 
-                int i = 0;
+                // int i = 0;
                 foreach(var gramEntry in gramDict) {
-                    List<Occurence> tokenIndexSet;
-                    if (!bigrams.TryGetValue(gramEntry.Key, out tokenIndexSet)) {
-                        tokenIndexSet = new List<Occurence>();
-                        bigrams[gramEntry.Key] = tokenIndexSet;
+                    HashSet<int> tokenIndexes;
+                    if (!bigrams.TryGetValue(gramEntry.Key, out tokenIndexes)) {
+                        tokenIndexes = new HashSet<int>();
+                        bigrams[gramEntry.Key] = tokenIndexes;
                     }
-                    tokenIndexSet.Add(new Occurence(tokenIndex, i++));
+                    tokenIndexes.Add(tokenIndex);
                 }
             }
 
@@ -159,6 +254,7 @@ namespace indexer_leveled_kgram {
         }
 
         override public SuggestionResult[] GetSuggestions(string query) {
+            query = query.Trim();
             // tokenizer
             var tokens = query.Split(' ').ToList();
             var result = new Dictionary<int, SuggestionResult>();
@@ -167,10 +263,9 @@ namespace indexer_leveled_kgram {
                 int tokenIndex;
                 if (dict.TryGetValue(tokens[i], out tokenIndex)) {
                     foreach(var candidate in invertedIndex[tokenIndex]) {
-                        
                         SuggestionResult suggestion;
                         if (!result.TryGetValue(candidate, out suggestion)){
-                            result[candidate] = new SuggestionResult(documents[candidate], 1);
+                            result[candidate] = new SuggestionResult(idToSuggestion[candidate].content, 1);
                         }
                         else {
                             suggestion.score ++;
@@ -200,7 +295,7 @@ namespace indexer_leveled_kgram {
                     foreach(var candidate in invertedIndex[tokenIndex]) {
                         SuggestionResult suggestion;
                         if (!result.TryGetValue(candidate, out suggestion)){
-                            result[candidate] = new SuggestionResult(documents[candidate], 1);
+                            result[candidate] = new SuggestionResult(idToSuggestion[candidate].content, 1);
                         }
                         else {
                             suggestion.score ++;
