@@ -171,9 +171,11 @@ namespace indexer_leveled_kgram {
         }
 
         void RemoveTokenFromIndex(string token){
-
             int tokenId = dict[token];
             invertedDict.Remove(tokenId);
+            invertedIndex.Remove(tokenId);
+            dict.Remove(token);
+
             var grams = GetBigrams(token);
             var removeLater = new List<string>();
             foreach(var gram in grams) {
@@ -189,6 +191,23 @@ namespace indexer_leveled_kgram {
             }
         }
 
+        public void PrintIndex(){
+            Console.WriteLine("Documents:");
+            foreach(var entry in idToSuggestion) {
+              Console.WriteLine(entry.Key + ": " + entry.Value.content);
+            }
+
+            Console.WriteLine("Bigrams:");
+            foreach(var entry in dict) {
+              Console.WriteLine(entry.Key + ": " + String.Join(", ", entry.Value));
+            }
+
+            Console.WriteLine("Inverted dictionary:");
+            foreach(var entry in invertedIndex) {
+              Console.WriteLine(entry.Key + ": " + String.Join(", ", entry.Value));
+            }
+        }
+
         public void Delete(int productId){
             foreach(var suggestionId in productIdToSuggestion[productId]) {
                 // decrease reference to suggestion
@@ -201,11 +220,16 @@ namespace indexer_leveled_kgram {
                         if (invertedIndex.TryGetValue(tokenId, out postList)) {
                             postList.Remove(suggestionId);
                         }
+
+                        if (postList.Count == 0) {
+                          // also remove token bigram if there is no more of that gram
+                          RemoveTokenFromIndex(token);
+                        }
                     }
                     idToSuggestion.Remove(suggestionId);
-
                 }
             }
+
             productIdToSuggestion.Remove(productId);
         }
         public void GetProductAndSuggestion(string txt, out int productId, out string suggestion) {
