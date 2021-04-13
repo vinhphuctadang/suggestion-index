@@ -138,6 +138,9 @@ namespace indexer_leveled_kgram {
             var tokens = suggestion.Split(' ');
             int tokenIndex;
             for(int i = 0; i<tokens.Length; ++i) {
+              if (tokens[i].Length == 0) {
+                continue;
+              }
                 if (!dict.TryGetValue(tokens[i], out tokenIndex)) {
                     dict[tokens[i]] = ++uniqueTokenCount;
                     tokenIndex = uniqueTokenCount;

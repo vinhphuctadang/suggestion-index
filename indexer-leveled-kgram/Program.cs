@@ -36,10 +36,11 @@ namespace indexer_leveled_kgram
         static void Main(string[] args)
         {
             // tokenization
-            var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
-            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
-            // var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
-            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
+            // var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
+            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
+
+            var path = AppDomain.CurrentDomain.BaseDirectory + "id-suggests.txt";
+            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "id-suggests.index";
             var engine = new InvertedIndexSuggestionEngine();
             Measurement marker;
 
@@ -47,25 +48,24 @@ namespace indexer_leveled_kgram
             marker = Mark();
             engine.Index(path);
             Report(marker, "Indexing done.");
+            // Console.WriteLine("Before deletion:");
+            // engine.PrintIndex();
+            // engine.Delete(1);
+            // Console.WriteLine("--------------------");
+            // engine.PrintIndex();
 
-            Console.WriteLine("Before deletion:");
-            engine.PrintIndex();
-            engine.Delete(2);
-            Console.WriteLine("--------------------");
-            engine.PrintIndex();
-
-            // while(true) {
-            //     Console.WriteLine("Input a phrase: ");
-            //     var searchPhrase = Console.ReadLine();
-            //     searchPhrase = searchPhrase.Trim();
-            //     marker = Mark();
-            //     var result = engine.GetSuggestions(searchPhrase); //, tolerance: 20);
-            //     Report(marker, "Suggestion done. Hit count: " + result.Length);
-            //     // echo hits
-            //     foreach(var r in result) {
-            //         Console.WriteLine(r.value + ", score: " + r.score);
-            //     }
-            // }
+            while(true) {
+                Console.WriteLine("Input a phrase: ");
+                var searchPhrase = Console.ReadLine();
+                searchPhrase = searchPhrase.Trim();
+                marker = Mark();
+                var result = engine.GetSuggestions(searchPhrase); //, tolerance: 20);
+                Report(marker, "Suggestion done. Hit count: " + result.Length);
+                // echo hits
+                foreach(var r in result) {
+                    Console.WriteLine(r.value + ", score: " + r.score);
+                }
+            }
         }
     }
 }
