@@ -18,7 +18,7 @@ namespace indexer_leveled_kgram
                 this.stopwatch = stopwatch;
             }
         }
-    
+
         static Measurement Mark(){
             var obj = new Measurement(GC.GetTotalMemory(true), new Stopwatch());
             obj.stopwatch.Start();
@@ -28,18 +28,18 @@ namespace indexer_leveled_kgram
         static void Report(Measurement m, string prompt){
 
             m.stopwatch.Stop();
-            Console.WriteLine(prompt + 
-                " - Time ellapsed: " + m.stopwatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms " + 
+            Console.WriteLine(prompt +
+                " - Time ellapsed: " + m.stopwatch.Elapsed.TotalMilliseconds.ToString("0.0") + "ms " +
                 "Memory = " +  (GC.GetTotalMemory(true) - m.memoryMarker) / (1024*1024) + " MB");
         }
 
         static void Main(string[] args)
         {
             // tokenization
-            // var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
-            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
-            var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
-            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
+            var path = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.txt";
+            var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "small-suggests.index";
+            // var path = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.txt";
+            // var indexerPath = AppDomain.CurrentDomain.BaseDirectory + "real-suggests.index";
             var engine = new InvertedIndexSuggestionEngine();
             Measurement marker;
 
@@ -51,8 +51,6 @@ namespace indexer_leveled_kgram
             while(true) {
                 Console.WriteLine("Input a phrase: ");
                 var searchPhrase = Console.ReadLine();
-                searchPhrase = searchPhrase.Trim();
-
                 searchPhrase = searchPhrase.Trim();
                 marker = Mark();
                 var result = engine.GetSuggestions(searchPhrase); //, tolerance: 20);
@@ -69,10 +67,10 @@ namespace indexer_leveled_kgram
 
 // Reference:
 
-// Information Retrieval and Web Search Dictionaries and tolerant retrieval (IIR 3): 
+// Information Retrieval and Web Search Dictionaries and tolerant retrieval (IIR 3):
 // --> https://michael.hahsler.net/SMU/CSE7337/slides/03dict.pdf
 
-// A query suggestion method combining TF-IDF and Jaccard Coefficient for interactive web search: 
+// A query suggestion method combining TF-IDF and Jaccard Coefficient for interactive web search:
 // --> https://core.ac.uk/download/pdf/74375309.pdf
 
 // Idea for Auto-Complete

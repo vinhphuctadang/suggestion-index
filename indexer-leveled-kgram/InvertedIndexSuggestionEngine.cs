@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;    
-    
+using System.Linq;
+
 namespace indexer_leveled_kgram {
 
     class SuggestionResultByIndex {
@@ -39,12 +39,9 @@ namespace indexer_leveled_kgram {
         Dictionary<string, HashSet<int>> bigrams; // bigram:string => [tokenId:int]
         Dictionary<int, HashSet<int>> invertedIndex;
         Dictionary<string, int> dict;
-        
         Dictionary<int, SuggestionEntry> idToSuggestion;
         Dictionary<string, SuggestionEntry> contentToSuggestion;
-
         Dictionary<int, string> invertedDict;
-
         Dictionary<int, HashSet<int>> productIdToSuggestion;
 
         int uniqueTokenCount;
@@ -66,7 +63,7 @@ namespace indexer_leveled_kgram {
             var result = new Dictionary<int, SuggestionResult>();
             foreach(var gram in grams) {
                 SuggestionResult suggest;
-                HashSet<int> tokenIndexes; 
+                HashSet<int> tokenIndexes;
                 if (!bigrams.TryGetValue(gram.Key, out tokenIndexes)) {
                     continue;
                 }
@@ -97,10 +94,10 @@ namespace indexer_leveled_kgram {
                 }
                 else {
                     char c1 = s[i], c2 = s[i+1];
-                    if (delimiter.Contains(c1)) { 
+                    if (delimiter.Contains(c1)) {
                         c1 = '$';
                     }
-                    if (delimiter.Contains(c2)) { 
+                    if (delimiter.Contains(c2)) {
                         c2 = '$';
                     }
                     bigram = c1.ToString() + c2;
@@ -116,7 +113,7 @@ namespace indexer_leveled_kgram {
                     result[bigram] ++;
                 }
             }
-        
+
             return result;
         }
 
@@ -158,8 +155,8 @@ namespace indexer_leveled_kgram {
 
         void AddToProductSuggestions(int productId, int suggestionId) {
             HashSet<int> suggestions;
-            if (productIdToSuggestion.TryGetValue(productId, out suggestions)) {
-                productIdToSuggestion[productId] = new HashSet<int>();
+            if (!productIdToSuggestion.TryGetValue(productId, out suggestions)) {
+                productIdToSuggestion[productId] = suggestions = new HashSet<int>();
             }
             suggestions.Add(suggestionId);
         }
