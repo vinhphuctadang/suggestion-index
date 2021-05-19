@@ -294,6 +294,11 @@ namespace indexer_leveled_kgram {
                         else {
                             suggestion.score ++;
                         }
+
+                        // if (result.Count >= 10) {
+                        //     Console.WriteLine("Break due to limit exceeding");
+                        //     break;
+                        // }
                     }
 
                     continue;
